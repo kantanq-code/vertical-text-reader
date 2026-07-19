@@ -16,8 +16,12 @@ export async function exportReaderToPdf(
 
   const bg = getComputedStyle(element).backgroundColor || "#ffffff";
 
-  // Kích thước một "màn" đọc = một trang PDF.
-  const pageWidthCss = element.clientWidth;
+  // Với vertical-rl, element tự nở rộng theo toàn bộ nội dung nên
+  // clientWidth == scrollWidth. Lấy bề rộng "một màn" từ container cha
+  // (khung cuộn ngang) hoặc từ viewport.
+  const scroller = element.parentElement;
+  const pageWidthCss =
+    (scroller && scroller.clientWidth) || window.innerWidth || 800;
   const pageHeightCss = element.clientHeight;
   const totalWidthCss = Math.max(element.scrollWidth, pageWidthCss);
   const totalPages = Math.max(1, Math.ceil(totalWidthCss / pageWidthCss));

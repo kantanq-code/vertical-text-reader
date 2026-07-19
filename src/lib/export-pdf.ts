@@ -16,56 +16,44 @@ export async function exportReaderToPdf(
 
   const bg = getComputedStyle(element).backgroundColor || "#ffffff";
 
-  // html-to-image dùng SVG <foreignObject> nên hỗ trợ oklch/color-mix
-  // (Tailwind v4) — html2canvas thì không.
-  const canvas = await toCanvas(element, {
-    backgroundColor: bg,
-    pixelRatio: 2,
-    cacheBust: true,
-    width: element.scrollWidth,
-    height: element.scrollHeight,
-    style: {
-      // Ép kích thước khi render vào foreignObject
-      width: `${element.scrollWidth}px`,
-      height: `${element.scrollHeight}px`,
-    },
-  });
+  // Kích thước một "màn" đọc = một trang PDF.
+  const pageWidthCss = element.clientWidth;
+  const pageHeightCss = element.clientHeight;
+  const totalWidthCss = Math.max(element.scrollWidth, pageWidthCss);
+  const totalPages = Math.max(1, Math.ceil(totalWidthCss / pageWidthCss));
 
-  const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  // PDF theo tỉ lệ đúng của reader → chữ không bị bóp nhỏ.
+  const pdf = new jsPDF({
+    orientation: pageWidthCss >= pageHeightCss ? "landscape" : "portrait",
+    unit: "pt",
+    format: [pageWidthCss, pageHeightCss],
+  });
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
 
-  // Cắt canvas thành các trang A4 theo chiều ngang, phải → trái.
-  const pxPerPage = Math.floor((pageW / pageH) * canvas.height);
-  const totalPages = Math.max(1, Math.ceil(canvas.width / pxPerPage));
-
+  // Chụp từng trang riêng bằng cách dịch nội dung qua transform, thay vì
+  // dựng một canvas khổng lồ (bị trình duyệt giới hạn ~16k/32k px và khiến
+  // toàn bộ chữ bị dồn thành lưới li ti).
   for (let i = 0; i < totalPages; i++) {
-    const sliceIndex = totalPages - 1 - i;
-    const sx = sliceIndex * pxPerPage;
-    const sw = Math.min(pxPerPage, canvas.width - sx);
+    // vertical-rl: cột đầu tiên nằm bên phải → trang PDF đầu = slice phải nhất.
+    const rightEdge = totalWidthCss - i * pageWidthCss;
+    const tx = -(rightEdge - pageWidthCss);
 
-    const pageCanvas = document.createElement("canvas");
-    pageCanvas.width = sw;
-    pageCanvas.height = canvas.height;
-    const ctx = pageCanvas.getContext("2d")!;
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, sw, canvas.height);
-    ctx.drawImage(canvas, sx, 0, sw, canvas.height, 0, 0, sw, canvas.height);
+    const canvas = await toCanvas(element, {
+      backgroundColor: bg,
+      pixelRatio: 2,
+      cacheBust: true,
+      width: pageWidthCss,
+      height: pageHeightCss,
+      style: {
+        transform: `translateX(${tx}px)`,
+        transformOrigin: "top left",
+      },
+    });
 
-    const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
-
-    const sliceRatio = pageCanvas.height / pageCanvas.width;
-    let drawW = pageW;
-    let drawH = pageW * sliceRatio;
-    if (drawH > pageH) {
-      drawH = pageH;
-      drawW = pageH / sliceRatio;
-    }
-    const x = (pageW - drawW) / 2;
-    const y = (pageH - drawH) / 2;
-
-    if (i > 0) pdf.addPage();
-    pdf.addImage(imgData, "JPEG", x, y, drawW, drawH);
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+    if (i > 0) pdf.addPage([pageWidthCss, pageHeightCss]);
+    pdf.addImage(imgData, "JPEG", 0, 0, pageW, pageH);
   }
 
   pdf.save(`${sanitize(filename)}.pdf`);

@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { splitChapters } from "@/lib/split-chapters";
 import { exportReaderToPdf } from "@/lib/export-pdf";
 import { exportChaptersToEpub } from "@/lib/export-epub";
+import { importFile } from "@/lib/import-file";
+
 
 export const Route = createFileRoute("/")({
   component: Index,

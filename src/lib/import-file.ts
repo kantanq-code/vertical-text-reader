@@ -27,7 +27,7 @@ export async function importFile(file: File): Promise<ImportResult> {
 }
 
 async function parseDocx(file: File): Promise<ImportResult> {
-  const mammoth = await import("mammoth/mammoth.browser");
+  const mammoth = await import("mammoth");
   const arrayBuffer = await file.arrayBuffer();
   const result = await mammoth.extractRawText({ arrayBuffer });
   const text = (result.value ?? "").trim();

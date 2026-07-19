@@ -120,6 +120,28 @@ function Index() {
     }
   }
 
+  async function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset so choosing the same file again re-triggers change
+    e.target.value = "";
+    if (!file || importing) return;
+    setImporting(true);
+    try {
+      const { text: imported, title: importedTitle } = await importFile(file);
+      setText((prev) =>
+        prev.trim() ? `${prev.trimEnd()}\n\n${imported}` : imported,
+      );
+      if (importedTitle && !title.trim()) setTitle(importedTitle);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Không đọc được file.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+
+
   if (mode === "reader") {
     return (
       <div
@@ -375,6 +397,20 @@ function Index() {
           >
             Đọc dọc →
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,.md,.docx,.pdf,.epub"
+            onChange={handleFilePicked}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
+          >
+            {importing ? "Đang đọc file…" : "Tải file lên"}
+          </button>
           <button
             onClick={() => {
               setText(SAMPLE);
@@ -400,7 +436,9 @@ function Index() {
 
         <footer className="mt-10 text-xs text-muted-foreground">
           Toàn bộ xử lý chạy trong trình duyệt — văn bản không rời khỏi máy bạn.
+          Hỗ trợ tải lên .txt, .md, .docx, .pdf (có sẵn chữ), .epub.
         </footer>
+
       </div>
     </div>
   );

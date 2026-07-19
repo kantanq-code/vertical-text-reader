@@ -42,7 +42,10 @@ function Index() {
   const [lineHeight, setLineHeight] = useState(1.9);
   const [mode, setMode] = useState<"editor" | "reader">("editor");
   const [busy, setBusy] = useState<"pdf" | "epub" | null>(null);
+  const [importing, setImporting] = useState(false);
   const readerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Load saved draft
   useEffect(() => {

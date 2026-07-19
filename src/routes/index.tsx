@@ -91,7 +91,7 @@ function Index() {
       await exportReaderToPdf(readerRef.current, title || "tategaki");
     } catch (e) {
       console.error(e);
-      alert("Xuất PDF thất bại. Với văn bản rất dài, hãy thử tách nhỏ hoặc dùng EPUB.");
+      alert("Xuất PDF thất bại. Vui lòng thử lại, hoặc dùng EPUB.");
     } finally {
       setBusy(null);
     }

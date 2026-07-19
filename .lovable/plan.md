@@ -1,49 +1,35 @@
+## Nguyên nhân
 
-## Mục tiêu
-Webapp **tĩnh** (deploy được lên GitHub Pages): dán văn bản tiếng Nhật → hiển thị theo chiều dọc (tategaki) như báo/sách Nhật, có thể xuất PDF hoặc EPUB. Không backend, không database, không tài khoản.
+Không phải do văn bản dài. Console báo rõ:
 
-## Giao diện (trang `/`)
-Viết lại `src/routes/index.tsx` thành trang chính gồm 2 chế độ:
+```
+Error: Attempting to parse an unsupported color function "oklch"
+  at html2canvas parseBackgroundColor
+```
 
-1. **Editor**
-   - `<textarea>` lớn để dán văn bản (đoạn, bài, hoặc cả cuốn sách).
-   - Ô **Tiêu đề**, **Tác giả** (tuỳ chọn, dùng cho PDF/EPUB).
-   - Tuỳ chọn: cỡ chữ (nhỏ/vừa/lớn), font (Noto Serif JP / Noto Sans JP), nền (trắng / kem giấy báo / tối), khoảng cách dòng.
-   - Nút **"Đọc dọc"** → chuyển sang Reader.
+Tailwind v4 (dự án đang dùng) sinh mọi biến màu mặc định dưới dạng `oklch(...)`. Thư viện `html2canvas` chỉ hiểu `rgb/hsl/hex`, gặp `oklch` là ném lỗi và huỷ toàn bộ quá trình chụp — nên PDF không xuất được, bất kể văn bản ngắn hay dài. Vùng reader tuy đã set màu hex inline, nhưng các phần tử con vẫn kế thừa/động chạm tới biến `--color-*` (ví dụ `color`, `border`, `background` mặc định từ `styles.css`/preflight), đủ để `html2canvas` gặp `oklch` và fail.
 
-2. **Reader (tategaki)**
-   - CSS `writing-mode: vertical-rl; text-orientation: mixed;` — đọc phải→trái, trên→dưới, dấu câu Nhật tự nhiên.
-   - Cuộn ngang mượt; scroll-snap theo cột trên mobile.
-   - Thanh công cụ nổi: quay lại editor, đổi cỡ chữ nhanh, **Xuất PDF**, **Xuất EPUB**.
+## Cách sửa
 
-## Xuất file (100% client-side)
-- **PDF**: `jspdf` + `html2canvas` chụp nội dung reader thành nhiều trang A4 dọc, giữ nguyên tategaki. Tên file: `<tiêu đề>.pdf`.
-- **EPUB**: `jszip` tự tạo cấu trúc EPUB 3 tối thiểu (mimetype, container.xml, content.opf, nav.xhtml, style.css, chapter.xhtml) với `writing-mode: vertical-rl` + `-epub-writing-mode: vertical-rl` để Apple Books / Thorium / KOReader render dọc.
-- Tách chương tự động: dòng bắt đầu bằng `# ` hoặc nhiều dòng trống liên tiếp → chương mới; nếu không có → 1 chương.
+Thay `html2canvas` bằng **`html-to-image`** — cùng mục đích (DOM → ảnh trong trình duyệt) nhưng dùng `SVG <foreignObject>` nên hỗ trợ đầy đủ CSS hiện đại: `oklch`, `color-mix`, `lch`, gradient mới… Không cần bỏ Tailwind v4 hay viết lại theme.
 
-## Static build cho GitHub Pages
-- Bật prerender/SSG trong `vite.config.ts` để build ra HTML tĩnh trong `dist/` (không cần server Node).
-- Thêm file `public/.nojekyll` để GitHub Pages không bỏ qua thư mục có dấu `_`.
-- Thêm `public/404.html` = copy `index.html` để SPA fallback hoạt động khi refresh sâu.
-- README ngắn: hướng dẫn build (`bun run build`) và deploy nhánh `gh-pages` (hoặc GitHub Actions).
-- Nếu host tại subpath (`username.github.io/<repo>/`), người dùng cần chỉnh `base` trong `vite.config.ts` — tôi sẽ để mặc định `/` và ghi chú cách đổi trong README.
+### Việc cần làm
 
-## Chi tiết kỹ thuật
-- Stack hiện tại (TanStack Start + React 19 + Tailwind v4), chỉ chỉnh frontend.
-- Cài thêm: `jspdf`, `html2canvas`, `jszip`.
-- Nạp font Noto Serif JP + Noto Sans JP qua `<link>` trong `head()` của `src/routes/__root.tsx`.
-- Cập nhật metadata `head()`: title "Tategaki – Đọc văn bản Nhật theo chiều dọc", description, og/twitter tags.
-- File mới:
-  - `src/routes/index.tsx` (viết lại)
-  - `src/components/tategaki-reader.tsx`
-  - `src/components/tategaki-toolbar.tsx`
-  - `src/lib/export-pdf.ts`
-  - `src/lib/export-epub.ts`
-  - `src/lib/split-chapters.ts`
-  - `public/.nojekyll`, `public/404.html`
-- Lưu văn bản + tuỳ chọn gần nhất vào `localStorage` (đọc trong `useEffect` để tránh hydration mismatch).
+1. `bun remove html2canvas` và `bun add html-to-image`.
+2. Viết lại `src/lib/export-pdf.ts`:
+   - Dùng `toCanvas(element, { pixelRatio: 2, backgroundColor, width: scrollWidth, height: scrollHeight, cacheBust: true })` thay cho `html2canvas(...)`.
+   - Phần logic còn lại (cắt canvas thành nhiều trang A4 theo chiều ngang, xếp phải → trái, `jsPDF.addImage`) giữ nguyên.
+   - Trước khi chụp: `await document.fonts.ready` để font Noto Serif/Sans JP đã load xong (tránh chụp nhầm font hệ thống).
+3. Cập nhật thông báo lỗi trong `src/routes/index.tsx` cho chính xác hơn (không đổ lỗi cho "văn bản dài" nữa; nói chung là "Xuất PDF thất bại, vui lòng thử lại hoặc dùng EPUB").
+4. Không đụng tới logic tategaki, EPUB, hay style.
 
-## Ngoài phạm vi
-- Không furigana (theo yêu cầu).
-- Không OCR ảnh báo giấy — chỉ xử lý văn bản dán vào.
-- Không backend, không auth, không đồng bộ đa thiết bị.
+### Kiểm chứng
+
+- Build/typecheck sạch.
+- Ở preview: dán văn bản mẫu (đã có nút "Dùng văn bản mẫu") → "Đọc dọc" → "Xuất PDF" → file tải về mở ra thấy chữ dọc, phải sang trái, nhiều trang A4.
+- Kiểm tra thêm với bài báo Nhật thật để chắc không còn lỗi `oklch`.
+
+### Ngoài phạm vi
+
+- Không đổi theme sang màu rgb/hex thủ công (giải pháp đó hạn chế và dễ vỡ khi user thêm class Tailwind mới).
+- Không thay đổi cách render tategaki hay cấu trúc EPUB.

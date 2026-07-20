@@ -6,10 +6,34 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Inside the Lovable build/preview, the wrapper forces the Cloudflare preset (server runtime)
+// so overrides to `nitro.preset` / `tanstackStart.prerender` are ignored — that's fine, Lovable
+// preview still works. Outside Lovable (e.g. GitHub Actions), we opt into fully static output:
+//   - nitro preset "static"  → no server runtime in the build output
+//   - prerender the whole site → produces plain index.html + assets
+// The resulting `dist/` can be hosted on GitHub Pages / any static host.
+//
+// For GitHub Pages under a project subpath (https://<user>.github.io/<repo>/), set
+//   BASE_URL=/<repo>/ npm run build
+// (the workflow in .github/workflows/deploy.yml does this automatically).
+const base = process.env.BASE_URL || "/";
+
 export default defineConfig({
+  vite: {
+    base,
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // Prerender every reachable route to static HTML (single-page app "/" here).
+    prerender: {
+      enabled: true,
+      crawlLinks: true,
+      autoSubfolderIndex: true,
+    },
+  },
+  nitro: {
+    preset: "static",
   },
 });

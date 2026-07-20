@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile || bun install
+
+      - name: Build (static)
+        env:
+          # For https://<user>.github.io/<repo>/  →  BASE_URL must be "/<repo>/".
+          # For a user/org site (<user>.github.io) or a custom domain, use "/".
+          BASE_URL: /${{ github.event.repository.name }}/
+        run: bun run build
+
+      - name: Locate static output
+        id: out
+        run: |
+          for d in dist/client dist/public dist; do
+            if [ -f "$d/index.html" ]; then
+              echo "dir=$d" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "No index.html found in dist/*" && ls -R dist && exit 1
+
+      - name: SPA fallback + Jekyll bypass
+        run: |
+          cp "${{ steps.out.outputs.dir }}/index.html" "${{ steps.out.outputs.dir }}/404.html"
+          touch "${{ steps.out.outputs.dir }}/.nojekyll"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ steps.out.outputs.dir }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

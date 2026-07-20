@@ -32,9 +32,6 @@ export default defineConfig({
       crawlLinks: true,
       autoSubfolderIndex: true,
     },
-    // SPA fallback: any unknown URL loads the shell so the client router can take over.
-    // On GitHub Pages we also copy index.html → 404.html in the workflow to trigger this.
-    pages: [{ path: "/", prerender: { enabled: true } }],
   },
   nitro: {
     preset: "static",

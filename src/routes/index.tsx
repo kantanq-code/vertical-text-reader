@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { splitChapters } from "@/lib/split-chapters";
-import { exportReaderToPdf } from "@/lib/export-pdf";
-import { exportChaptersToEpub } from "@/lib/export-epub";
-import { importFile } from "@/lib/import-file";
 
 
 export const Route = createFileRoute("/")({
@@ -93,6 +90,7 @@ function Index() {
     if (!readerRef.current || busy) return;
     setBusy("pdf");
     try {
+      const { exportReaderToPdf } = await import("@/lib/export-pdf");
       await exportReaderToPdf(readerRef.current, title || "tategaki");
     } catch (e) {
       console.error(e);
@@ -106,6 +104,7 @@ function Index() {
     if (busy || chapters.length === 0) return;
     setBusy("epub");
     try {
+      const { exportChaptersToEpub } = await import("@/lib/export-epub");
       await exportChaptersToEpub({
         title: title || "Tategaki",
         author,
@@ -127,6 +126,7 @@ function Index() {
     if (!file || importing) return;
     setImporting(true);
     try {
+      const { importFile } = await import("@/lib/import-file");
       const { text: imported, title: importedTitle } = await importFile(file);
       setText((prev) =>
         prev.trim() ? `${prev.trimEnd()}\n\n${imported}` : imported,

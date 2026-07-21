@@ -17,23 +17,27 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 //   BASE_URL=/<repo>/ npm run build
 // (the workflow in .github/workflows/deploy.yml does this automatically).
 const base = process.env.BASE_URL || "/";
+// Only opt into fully-static output when explicitly building for a static host
+// (e.g. GitHub Actions sets STATIC_BUILD=1). Inside the Lovable sandbox the
+// wrapper forces the Cloudflare preset and prerender crashes because its
+// preview-server-plugin can't find the node-server entry.
+const staticBuild = process.env.STATIC_BUILD === "1";
 
 export default defineConfig({
   vite: {
     base,
   },
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
     server: { entry: "server" },
-    // Prerender every reachable route to static HTML (single-page app "/" here).
-    prerender: {
-      enabled: true,
-      crawlLinks: true,
-      autoSubfolderIndex: true,
-    },
+    ...(staticBuild
+      ? {
+          prerender: {
+            enabled: true,
+            crawlLinks: true,
+            autoSubfolderIndex: true,
+          },
+        }
+      : {}),
   },
-  nitro: {
-    preset: "static",
-  },
+  ...(staticBuild ? { nitro: { preset: "static" } } : {}),
 });

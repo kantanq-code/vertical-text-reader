@@ -4,6 +4,24 @@ import { splitChapters } from "@/lib/split-chapters";
 
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Tategaki — Đọc văn bản Nhật theo chiều dọc" },
+      {
+        name: "description",
+        content:
+          "Dán văn bản tiếng Nhật và đọc theo chiều dọc như báo, sách Nhật. Xuất PDF hoặc EPUB tategaki ngay trong trình duyệt.",
+      },
+      { property: "og:title", content: "Tategaki — Đọc văn bản Nhật theo chiều dọc" },
+      {
+        property: "og:description",
+        content:
+          "Dán văn bản tiếng Nhật và đọc theo chiều dọc. Xuất PDF/EPUB tategaki.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
@@ -29,7 +47,7 @@ const THEME_STYLES: Record<Theme, { bg: string; fg: string; muted: string }> = {
   dark: { bg: "#141414", fg: "#ececec", muted: "#8a8a8a" },
 };
 
-function Index() {
+export function Index() {
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");

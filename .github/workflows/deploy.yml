@@ -29,6 +29,7 @@ jobs:
 
       - name: Build (static)
         env:
+          STATIC_BUILD: "1"
           # For https://<user>.github.io/<repo>/  →  BASE_URL must be "/<repo>/".
           # For a user/org site (<user>.github.io) or a custom domain, use "/".
           BASE_URL: /${{ github.event.repository.name }}/

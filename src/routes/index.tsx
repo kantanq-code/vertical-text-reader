@@ -231,11 +231,15 @@ export function Index() {
           <div className="ml-auto flex flex-wrap gap-2">
             <button
               onClick={handleExportPdf}
-              disabled={busy !== null}
+              disabled={busy !== null || chapters.length === 0}
               className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
               style={{ borderColor: `${themeStyle.muted}66` }}
             >
-              {busy === "pdf" ? "Đang xuất…" : "Xuất PDF"}
+              {busy === "pdf"
+                ? pdfProgress
+                  ? `Đang xuất PDF ${pdfProgress.done}/${pdfProgress.total}…`
+                  : "Đang xuất…"
+                : "Xuất PDF"}
             </button>
             <button
               onClick={handleExportEpub}

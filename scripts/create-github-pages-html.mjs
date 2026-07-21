@@ -1,7 +1,7 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const outputDir = "dist/client";
+const outputDir = process.env.OUTPUT_DIR || ".output/public";
 const assetsDir = join(outputDir, "assets");
 
 function normalizeBase(value) {

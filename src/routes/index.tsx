@@ -55,6 +55,7 @@ export function Index() {
   const [theme, setTheme] = useState<Theme>("paper");
   const [size, setSize] = useState<Size>("md");
   const [lineHeight, setLineHeight] = useState(1.9);
+  const [zenkakuNums, setZenkakuNums] = useState(true);
   const [mode, setMode] = useState<"editor" | "reader">("editor");
   const [busy, setBusy] = useState<"pdf" | "epub" | null>(null);
   const [importing, setImporting] = useState(false);
@@ -93,10 +94,15 @@ export function Index() {
     }
   }, [text, title, author, font, theme, size, lineHeight]);
 
-  const chapters = useMemo(
-    () => splitChapters(text, title || "本文"),
-    [text, title],
-  );
+  const chapters = useMemo(() => {
+    const raw = splitChapters(text, title || "本文");
+    if (!zenkakuNums) return raw;
+    const conv = (s: string) =>
+      s.replace(/[0-9]/g, (d) =>
+        String.fromCharCode(0xff10 + d.charCodeAt(0) - 0x30),
+      );
+    return raw.map((c) => ({ ...c, title: conv(c.title), body: conv(c.body) }));
+  }, [text, title, zenkakuNums]);
 
   const themeStyle = THEME_STYLES[theme];
   const fontFamily =
@@ -198,6 +204,18 @@ export function Index() {
               {s.toUpperCase()}
             </button>
           ))}
+          <label
+            className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs"
+            style={{ color: themeStyle.muted }}
+            title="Chuyển 0-9 (半角) thành ０-９ (全角) để chữ số hiển thị dọc"
+          >
+            <input
+              type="checkbox"
+              checked={zenkakuNums}
+              onChange={(e) => setZenkakuNums(e.target.checked)}
+            />
+            Số 全角
+          </label>
           <div className="ml-auto flex flex-wrap gap-2">
             <button
               onClick={handleExportPdf}

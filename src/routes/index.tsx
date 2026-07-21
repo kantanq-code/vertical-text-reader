@@ -29,7 +29,7 @@ const THEME_STYLES: Record<Theme, { bg: string; fg: string; muted: string }> = {
   dark: { bg: "#141414", fg: "#ececec", muted: "#8a8a8a" },
 };
 
-function Index() {
+export function Index() {
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");

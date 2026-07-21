@@ -19,9 +19,19 @@ const entryCandidates = assets.filter((file) => /^index-.*\.js$/.test(file));
 let entry = "";
 for (const file of entryCandidates) {
   const source = await readFile(join(assetsDir, file), "utf8");
-  if (source.includes("hydrateRoot(document")) {
+  if (source.includes("__TSS_START_OPTIONS__") && source.includes("hydrateRoot")) {
     entry = file;
     break;
+  }
+}
+
+if (!entry) {
+  for (const file of entryCandidates) {
+    const source = await readFile(join(assetsDir, file), "utf8");
+    if (source.includes("hydrateRoot")) {
+      entry = file;
+      break;
+    }
   }
 }
 

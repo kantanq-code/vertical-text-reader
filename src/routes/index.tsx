@@ -110,17 +110,29 @@ export function Index() {
       ? '"Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif'
       : '"Noto Serif JP", "Hiragino Mincho Pro", "Yu Mincho", serif';
 
+  const [pdfProgress, setPdfProgress] = useState<{ done: number; total: number } | null>(null);
+
   async function handleExportPdf() {
-    if (!readerRef.current || busy) return;
+    if (busy || chapters.length === 0) return;
     setBusy("pdf");
+    setPdfProgress({ done: 0, total: chapters.length });
     try {
-      const { exportReaderToPdf } = await import("@/lib/export-pdf");
-      await exportReaderToPdf(readerRef.current, title || "tategaki");
+      const { exportChaptersToPdf } = await import("@/lib/export-pdf");
+      await exportChaptersToPdf({
+        title: title || "tategaki",
+        chapters,
+        font,
+        fontSize: SIZE_PX[size],
+        lineHeight,
+        theme: { bg: themeStyle.bg, fg: themeStyle.fg },
+        onProgress: (done, total) => setPdfProgress({ done, total }),
+      });
     } catch (e) {
       console.error(e);
       alert("Xuất PDF thất bại. Vui lòng thử lại, hoặc dùng EPUB.");
     } finally {
       setBusy(null);
+      setPdfProgress(null);
     }
   }
 
@@ -219,11 +231,15 @@ export function Index() {
           <div className="ml-auto flex flex-wrap gap-2">
             <button
               onClick={handleExportPdf}
-              disabled={busy !== null}
+              disabled={busy !== null || chapters.length === 0}
               className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
               style={{ borderColor: `${themeStyle.muted}66` }}
             >
-              {busy === "pdf" ? "Đang xuất…" : "Xuất PDF"}
+              {busy === "pdf"
+                ? pdfProgress
+                  ? `Đang xuất PDF ${pdfProgress.done}/${pdfProgress.total}…`
+                  : "Đang xuất…"
+                : "Xuất PDF"}
             </button>
             <button
               onClick={handleExportEpub}

@@ -29,7 +29,6 @@ jobs:
 
       - name: Build (static)
         env:
-          STATIC_BUILD: "1"
           # For https://<user>.github.io/<repo>/  →  BASE_URL must be "/<repo>/".
           # For a user/org site (<user>.github.io) or a custom domain, use "/".
           BASE_URL: /${{ github.event.repository.name }}/
@@ -38,7 +37,7 @@ jobs:
       - name: Locate static output
         id: out
         run: |
-          for d in dist/client dist/public dist; do
+          for d in .output/public dist/client dist/public dist; do
             if [ -f "$d/index.html" ]; then
               echo "dir=$d" >> "$GITHUB_OUTPUT"
               exit 0

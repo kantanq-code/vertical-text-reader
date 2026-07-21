@@ -204,6 +204,18 @@ export function Index() {
               {s.toUpperCase()}
             </button>
           ))}
+          <label
+            className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs"
+            style={{ color: themeStyle.muted }}
+            title="Chuyển 0-9 (半角) thành ０-９ (全角) để chữ số hiển thị dọc"
+          >
+            <input
+              type="checkbox"
+              checked={zenkakuNums}
+              onChange={(e) => setZenkakuNums(e.target.checked)}
+            />
+            Số 全角
+          </label>
           <div className="ml-auto flex flex-wrap gap-2">
             <button
               onClick={handleExportPdf}

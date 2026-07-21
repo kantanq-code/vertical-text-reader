@@ -1,11 +1,12 @@
 import { PDFDocument, rgb, degrees, type PDFPage, type PDFFont } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 
-// Nạp OTF Noto CJK JP từ jsdelivr. File ~5-7MB, chỉ tải lần đầu và cache.
+// Nạp TTF Noto CJK JP (variable font, google-fonts build) từ jsdelivr.
+// File ~10-13MB, chỉ tải lần đầu và cache trong module.
 const FONT_URLS: Record<"serif" | "sans", string> = {
   serif:
-    "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Serif/OTF/Japanese/NotoSerifJP-Regular.otf",
-  sans: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/OTF/Japanese/NotoSansJP-Regular.otf",
+    "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/google-fonts/NotoSerifJP%5Bwght%5D.ttf",
+  sans: "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/google-fonts/NotoSansJP%5Bwght%5D.ttf",
 };
 
 const fontCache: Partial<Record<"serif" | "sans", ArrayBuffer>> = {};

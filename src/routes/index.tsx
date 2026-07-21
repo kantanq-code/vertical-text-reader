@@ -55,6 +55,7 @@ export function Index() {
   const [theme, setTheme] = useState<Theme>("paper");
   const [size, setSize] = useState<Size>("md");
   const [lineHeight, setLineHeight] = useState(1.9);
+  const [zenkakuNums, setZenkakuNums] = useState(true);
   const [mode, setMode] = useState<"editor" | "reader">("editor");
   const [busy, setBusy] = useState<"pdf" | "epub" | null>(null);
   const [importing, setImporting] = useState(false);

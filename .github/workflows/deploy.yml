@@ -32,7 +32,9 @@ jobs:
           # For https://<user>.github.io/<repo>/  →  BASE_URL must be "/<repo>/".
           # For a user/org site (<user>.github.io) or a custom domain, use "/".
           BASE_URL: /${{ github.event.repository.name }}/
-        run: bun run build
+        run: |
+          bun run build
+          bun scripts/create-github-pages-html.mjs
 
       - name: Locate static output
         id: out

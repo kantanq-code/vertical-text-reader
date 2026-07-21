@@ -94,10 +94,15 @@ export function Index() {
     }
   }, [text, title, author, font, theme, size, lineHeight]);
 
-  const chapters = useMemo(
-    () => splitChapters(text, title || "本文"),
-    [text, title],
-  );
+  const chapters = useMemo(() => {
+    const raw = splitChapters(text, title || "本文");
+    if (!zenkakuNums) return raw;
+    const conv = (s: string) =>
+      s.replace(/[0-9]/g, (d) =>
+        String.fromCharCode(0xff10 + d.charCodeAt(0) - 0x30),
+      );
+    return raw.map((c) => ({ ...c, title: conv(c.title), body: conv(c.body) }));
+  }, [text, title, zenkakuNums]);
 
   const themeStyle = THEME_STYLES[theme];
   const fontFamily =

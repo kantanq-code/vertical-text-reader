@@ -75,9 +75,9 @@ export async function exportChaptersToPdf(opts: ExportChaptersToPdfOptions) {
   const fontBytes = await loadFont(opts.font);
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
-  // subset:false vì pdf-lib/fontkit tạo subset CFF không hợp lệ với poppler.
-  // Bù lại phải nạp full OTF (~25MB) nhưng chỉ tải một lần và cache client-side.
-  const font: PDFFont = await pdfDoc.embedFont(fontBytes, { subset: false });
+  // Subset: TTF glyf subsetting hoạt động tốt với pdf-lib → PDF nhẹ (~vài trăm KB).
+  const font: PDFFont = await pdfDoc.embedFont(fontBytes, { subset: true });
+
 
   // Khổ giấy: A4 dọc — tỉ lệ ổn cho tategaki nhiều cột.
   const pw = 595.28;

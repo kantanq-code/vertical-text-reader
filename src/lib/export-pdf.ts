@@ -1,14 +1,14 @@
 import { PDFDocument, rgb, degrees, type PDFPage, type PDFFont } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
+import sawarabiMinchoUrl from "@/assets/fonts/sawarabi-mincho.ttf?url";
+import sawarabiGothicUrl from "@/assets/fonts/sawarabi-gothic.ttf?url";
 
-// Nạp OTF Noto CJK JP (bản static, không phải variable) từ raw.githubusercontent.
-// File ~25MB (Regular), CORS enabled, chỉ tải lần đầu rồi cache trong module.
-// KHÔNG dùng variable font vì pdf-lib/fontkit chọn instance ExtraLight mặc định
-// khiến nhiều glyph không render được ("invalid outline").
+// Bundle 2 font TTF (glyf-based) Nhật ngữ vào build. TTF glyf hoạt động ổn với
+// cơ chế subset của pdf-lib (OTF/CFF bị lỗi khiến glyph CJK không render).
+// Sawarabi Mincho / Gothic ~3.5MB + 1.9MB, phủ đủ Jouyou kanji + kana.
 const FONT_URLS: Record<"serif" | "sans", string> = {
-  serif:
-    "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Serif/OTF/Japanese/NotoSerifCJKjp-Regular.otf",
-  sans: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf",
+  serif: sawarabiMinchoUrl,
+  sans: sawarabiGothicUrl,
 };
 
 const fontCache: Partial<Record<"serif" | "sans", ArrayBuffer>> = {};
@@ -22,6 +22,7 @@ async function loadFont(kind: "serif" | "sans"): Promise<ArrayBuffer> {
   fontCache[kind] = buf;
   return buf;
 }
+
 
 export interface ExportChaptersToPdfOptions {
   title: string;

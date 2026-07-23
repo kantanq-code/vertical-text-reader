@@ -1,14 +1,14 @@
 import { PDFDocument, rgb, degrees, type PDFPage, type PDFFont } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
+import sawarabiMinchoUrl from "@/assets/fonts/sawarabi-mincho.ttf?url";
+import sawarabiGothicUrl from "@/assets/fonts/sawarabi-gothic.ttf?url";
 
-// Nạp OTF Noto CJK JP (bản static, không phải variable) từ raw.githubusercontent.
-// File ~25MB (Regular), CORS enabled, chỉ tải lần đầu rồi cache trong module.
-// KHÔNG dùng variable font vì pdf-lib/fontkit chọn instance ExtraLight mặc định
-// khiến nhiều glyph không render được ("invalid outline").
+// Bundle 2 font TTF (glyf-based) Nhật ngữ vào build. TTF glyf hoạt động ổn với
+// cơ chế subset của pdf-lib (OTF/CFF bị lỗi khiến glyph CJK không render).
+// Sawarabi Mincho / Gothic ~3.5MB + 1.9MB, phủ đủ Jouyou kanji + kana.
 const FONT_URLS: Record<"serif" | "sans", string> = {
-  serif:
-    "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Serif/OTF/Japanese/NotoSerifCJKjp-Regular.otf",
-  sans: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf",
+  serif: sawarabiMinchoUrl,
+  sans: sawarabiGothicUrl,
 };
 
 const fontCache: Partial<Record<"serif" | "sans", ArrayBuffer>> = {};
@@ -22,6 +22,7 @@ async function loadFont(kind: "serif" | "sans"): Promise<ArrayBuffer> {
   fontCache[kind] = buf;
   return buf;
 }
+
 
 export interface ExportChaptersToPdfOptions {
   title: string;
@@ -74,9 +75,9 @@ export async function exportChaptersToPdf(opts: ExportChaptersToPdfOptions) {
   const fontBytes = await loadFont(opts.font);
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
-  // subset:false vì pdf-lib/fontkit tạo subset CFF không hợp lệ với poppler.
-  // Bù lại phải nạp full OTF (~25MB) nhưng chỉ tải một lần và cache client-side.
-  const font: PDFFont = await pdfDoc.embedFont(fontBytes, { subset: false });
+  // Subset: TTF glyf subsetting hoạt động tốt với pdf-lib → PDF nhẹ (~vài trăm KB).
+  const font: PDFFont = await pdfDoc.embedFont(fontBytes, { subset: true });
+
 
   // Khổ giấy: A4 dọc — tỉ lệ ổn cho tategaki nhiều cột.
   const pw = 595.28;
